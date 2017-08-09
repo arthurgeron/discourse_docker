@@ -238,7 +238,7 @@ host_run() {
   end
 RUBY
 
-  host_run=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e "$env_ruby"`
+  host_run=`cat $config_file | $docker_path run $user_args --rm --link discoursePostgres:dPostgres -i -a stdout -a stdin $image ruby -e "$env_ruby"`
 
   while [ "$host_run" ] ; do
     iter=${host_run%%--SEP--*}
@@ -252,17 +252,17 @@ RUBY
 
 
 set_volumes() {
-  volumes=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
+  volumes=`cat $config_file | $docker_path run $user_args --rm --link discoursePostgres:dPostgres -i -a stdout -a stdin $image ruby -e \
         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['volumes'].map{|v| '-v ' << v['volume']['host'] << ':' << v['volume']['guest'] << ' '}.join"`
 }
 
 set_links() {
-    links=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
+    links=`cat $config_file | $docker_path run $user_args --rm --link discoursePostgres:dPostgres -i -a stdout -a stdin $image ruby -e \
         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['links'].map{|l| '--link ' << l['link']['name'] << ':' << l['link']['alias'] << ' '}.join"`
 }
 
 find_templates() {
-    local templates=`cat $1 | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
+    local templates=`cat $1 | $docker_path run $user_args --rm --link discoursePostgres:dPostgres -i -a stdin -a stdout $image ruby -e \
       "require 'yaml'; puts YAML.load(STDIN.readlines.join)['templates']"`
 
     local arrTemplates=${templates// / }
@@ -322,7 +322,7 @@ set_template_info() {
     puts env.map{|k,v| "-e\n#{k}=#{v}" }.join("\n")
 RUBY
 
-    raw=`exec echo "$input" | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e "$env_ruby"`
+    raw=`exec echo "$input" | $docker_path run $user_args --rm --link discoursePostgres:dPostgres -i -a stdin -a stdout $image ruby -e "$env_ruby"`
 
     env=()
     ok=1
@@ -361,7 +361,7 @@ RUBY
     puts labels.map{|k,v| "-l\n#{k}=#{v}" }.join("\n")
 RUBY
 
-    raw=`exec echo "$input" | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e "$labels_ruby"`
+    raw=`exec echo "$input" | $docker_path run $user_args --rm --link discoursePostgres:dPostgres -i -a stdin -a stdout $image ruby -e "$labels_ruby"`
 
     labels=()
     ok=1
@@ -445,7 +445,7 @@ run_stop() {
 }
 
 set_run_image() {
-  run_image=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
+  run_image=`cat $config_file | $docker_path run $user_args --rm --link discoursePostgres:dPostgres -i -a stdin -a stdout $image ruby -e \
     "require 'yaml'; puts YAML.load(STDIN.readlines.join)['run_image']"`
 
   if [ -z "$run_image" ]; then
@@ -454,12 +454,12 @@ set_run_image() {
 }
 
 set_boot_command() {
-  boot_command=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
+  boot_command=`cat $config_file | $docker_path run $user_args --rm --link discoursePostgres:dPostgres -i -a stdin -a stdout $image ruby -e \
     "require 'yaml'; puts YAML.load(STDIN.readlines.join)['boot_command']"`
 
   if [ -z "$boot_command" ]; then
 
-    no_boot_command=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
+    no_boot_command=`cat $config_file | $docker_path run $user_args --rm --link discoursePostgres:dPostgres -i -a stdin -a stdout $image ruby -e \
       "require 'yaml'; puts YAML.load(STDIN.readlines.join)['no_boot_command']"`
 
     if [ -z "$no_boot_command" ]; then
@@ -491,10 +491,10 @@ run_start() {
 
    host_run
 
-   ports=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
+   ports=`cat $config_file | $docker_path run $user_args --rm --link discoursePostgres:dPostgres -i -a stdout -a stdin $image ruby -e \
          "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| \"-p #{p}\"}.join(' ')"`
 
-   docker_args=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
+   docker_args=`cat $config_file | $docker_path run $user_args --rm --link discoursePostgres:dPostgres -i -a stdout -a stdin $image ruby -e \
           "require 'yaml'; puts YAML.load(STDIN.readlines.join)['docker_args']"`
 
    set_template_info
@@ -524,7 +524,7 @@ run_start() {
      fi
 
      # we got to normalize so we only have allowed strings, this is more comprehensive but lets see how bash does first
-     # hostname=`$docker_path run $user_args --rm $image ruby -e 'print ARGV[0].gsub(/[^a-zA-Z-]/, "-")' $hostname`
+     # hostname=`$docker_path run $user_args --rm --link discoursePostgres:dPostgres $image ruby -e 'print ARGV[0].gsub(/[^a-zA-Z-]/, "-")' $hostname`
      # docker added more hostname rules
      hostname=${hostname//_/-}
 
@@ -555,10 +555,10 @@ run_bootstrap() {
 
   set_template_info
 
-  base_image=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
+  base_image=`cat $config_file | $docker_path run $user_args --rm --link discoursePostgres:dPostgres -i -a stdin -a stdout $image ruby -e \
     "require 'yaml'; puts YAML.load(STDIN.readlines.join)['base_image']"`
 
-  update_pups=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
+  update_pups=`cat $config_file | $docker_path run $user_args --rm --link discoursePostgres:dPostgres -i -a stdin -a stdout $image ruby -e \
     "require 'yaml'; puts YAML.load(STDIN.readlines.join)['update_pups']"`
 
   if [[ ! X"" = X"$base_image" ]]; then
